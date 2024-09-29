@@ -1,60 +1,58 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mongo
-  namespace: quiz
-  labels:
-    app: mongo
+  name: mongodb
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: mongo
-  template:
+      app: mongodb
+  replicas: 1
+  template: # template for the pods
     metadata:
       labels:
-        app: mongo
+        app: mongodb
     spec:
       containers:
-      - name: mongo
-        image: mongo:4.4.6
-        ports:
-        - containerPort: 27017
+      - name: mongodb
+        image: mongo:3.6.5-jessie
         volumeMounts:
-        - name: mongo-volume
-          mountPath: /data/db
+          - name: mongo-persistent-storage
+            mountPath: /data/db
       volumes:
-      - name: mongo-volume
-        persistentVolumeClaim:
-          claimName: mongo-pvc
+        - name: mongo-persistent-storage
+          # pointer to the configuration of HOW we want the mount to be implemented
+          persistentVolumeClaim:
+            claimName: mongo-pvc
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: mongo-pv
-  namespace: quiz
-spec:
-  capacity: 
-    storage: 1Gi
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: /data/db
----
+# What do want?
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mongo-pvc
-  namespace: quiz
-spec: 
-  accessModes:  
+spec:
+  storageClassName: mylocalstorage
+  accessModes:
     - ReadWriteOnce
-  storageClassName: ""
   resources:
     requests:
-      storage: 1Gi
----    
+      storage: 2Gi
+---
+# How do we want it implemented
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-storage
+spec:
+  storageClassName: mylocalstorage
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/mongodb/"
+    type: DirectoryOrCreate
+
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -62,7 +60,7 @@ metadata:
   namespace: quiz
 spec:
   selector:
-    app: mongo
+    app: mongodb
   ports:
   - protocol: TCP
     port: 27017
