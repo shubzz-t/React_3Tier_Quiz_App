@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ogochukwuozotta/frontend-js:latest
+        image: shubzz/frontend-js:latest
         env:
         - name: VITE_REACT_APP_API_URL
           value: "http://techopsjourney.site/api/questions"
